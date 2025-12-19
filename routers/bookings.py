@@ -1,23 +1,22 @@
-# routers/bookings.py
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from database import get_db
-from models.booking import Booking
+from jose import jwt, JWTError
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 
-# Импортируем зависимость из main.py
-from main import get_current_user  # ← важно!
+from database import get_db
+from models.booking import Booking
+from auth import SECRET_KEY, ALGORITHM
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
-# Pydantic модели (без изменений)
 class BookingCreate(BaseModel):
     class_id: int
     class_name: str
-    class_time: str
-    class_date: str
+    class_time: str  
+    class_date: str  
     trainer_name: str
     hall_name: str
 
@@ -34,19 +33,36 @@ class BookingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Вспомогательная функция: получаем user_id из токена
-def get_user_id_from_request(current_user: dict = Depends(get_current_user)):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Требуется авторизация")
-    return current_user["id"]  # ← у тебя в заглушке user["id"] = 1
+def get_user_id_from_token(token: str) -> int:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Невалидный токен"
+            )
+        return int(user_id)
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Невалидный токен"
+        )
 
-@router.post("/", response_model=BookingResponse)
+security = HTTPBearer()
+
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> int:
+    return get_user_id_from_token(credentials.credentials)
+
+@router.post("/", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
 def create_booking(
     booking_data: BookingCreate,
-    user_id: int = Depends(get_user_id_from_request),  # ✅
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    # Проверка дубликата
+
     existing_booking = db.query(Booking).filter(
         Booking.user_id == user_id,
         Booking.class_id == booking_data.class_id
@@ -54,11 +70,10 @@ def create_booking(
     
     if existing_booking:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Вы уже записаны на это занятие"
         )
     
-    # Создаём запись
     new_booking = Booking(
         user_id=user_id,
         class_id=booking_data.class_id,
@@ -72,32 +87,42 @@ def create_booking(
     db.add(new_booking)
     db.commit()
     db.refresh(new_booking)
+    
     return new_booking
 
 @router.get("/my", response_model=List[BookingResponse])
 def get_my_bookings(
-    user_id: int = Depends(get_user_id_from_request),  # ← из заголовка
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
+
     bookings = db.query(Booking).filter(
         Booking.user_id == user_id
     ).order_by(Booking.class_date, Booking.class_time).all()
+    
     return bookings
 
-@router.delete("/{booking_id}")
+@router.delete("/{booking_id}", status_code=status.HTTP_200_OK)
 def cancel_booking(
     booking_id: int,
-    user_id: int = Depends(get_user_id_from_request),  # ← из заголовка
+    user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
+    """
+    Отмена записи на занятие
+    """
     booking = db.query(Booking).filter(
         Booking.id == booking_id,
         Booking.user_id == user_id
     ).first()
     
     if not booking:
-        raise HTTPException(status_code=404, detail="Запись не найдена")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Запись не найдена"
+        )
     
     db.delete(booking)
     db.commit()
-    return {"message": "Запись отменена"}
+    
+    return {"message": "Запись успешно отменена"}
