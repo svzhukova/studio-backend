@@ -1,3 +1,4 @@
+# routers/bookings.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import get_db
@@ -6,14 +7,17 @@ from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 
+# Импортируем зависимость из main.py
+from main import get_current_user  # ← важно!
+
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
-
+# Pydantic модели (без изменений)
 class BookingCreate(BaseModel):
     class_id: int
     class_name: str
-    class_time: str  # "09:00-10:30"
-    class_date: str  # "2025-10-13"
+    class_time: str
+    class_date: str
     trainer_name: str
     hall_name: str
 
@@ -30,22 +34,19 @@ class BookingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
-def get_user_id_from_token(token: str) -> int:
-
-    return 1  
+# Вспомогательная функция: получаем user_id из токена
+def get_user_id_from_request(current_user: dict = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+    return current_user["id"]  # ← у тебя в заглушке user["id"] = 1
 
 @router.post("/", response_model=BookingResponse)
 def create_booking(
     booking_data: BookingCreate,
-    token: str,  
+    user_id: int = Depends(get_user_id_from_request),  # ✅
     db: Session = Depends(get_db)
 ):
-    """
-    Создание новой записи на занятие
-    """
-    user_id = get_user_id_from_token(token)
-    
+    # Проверка дубликата
     existing_booking = db.query(Booking).filter(
         Booking.user_id == user_id,
         Booking.class_id == booking_data.class_id
@@ -53,11 +54,11 @@ def create_booking(
     
     if existing_booking:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=400,
             detail="Вы уже записаны на это занятие"
         )
     
-
+    # Создаём запись
     new_booking = Booking(
         user_id=user_id,
         class_id=booking_data.class_id,
@@ -71,44 +72,32 @@ def create_booking(
     db.add(new_booking)
     db.commit()
     db.refresh(new_booking)
-    
     return new_booking
 
 @router.get("/my", response_model=List[BookingResponse])
 def get_my_bookings(
-    token: str,  # передаётся как ?token=...
+    user_id: int = Depends(get_user_id_from_request),  # ← из заголовка
     db: Session = Depends(get_db)
 ):
-
-    user_id = get_user_id_from_token(token)
-    
     bookings = db.query(Booking).filter(
         Booking.user_id == user_id
     ).order_by(Booking.class_date, Booking.class_time).all()
-    
     return bookings
 
 @router.delete("/{booking_id}")
 def cancel_booking(
     booking_id: int,
-    token: str,  # передаётся как ?token=...
+    user_id: int = Depends(get_user_id_from_request),  # ← из заголовка
     db: Session = Depends(get_db)
 ):
-
-    user_id = get_user_id_from_token(token)
-    
     booking = db.query(Booking).filter(
         Booking.id == booking_id,
         Booking.user_id == user_id
     ).first()
     
     if not booking:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Запись не найдена"
-        )
+        raise HTTPException(status_code=404, detail="Запись не найдена")
     
     db.delete(booking)
     db.commit()
-    
     return {"message": "Запись отменена"}
