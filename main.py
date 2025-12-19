@@ -8,6 +8,7 @@ import os
 from fastapi.staticfiles import StaticFiles
 from routers.bookings import router as bookings_router
 from datetime import timedelta
+from auth import router as auth_router
 
 SECRET_KEY = "your-secret-key-here-change-in-production"
 ALGORITHM = "HS256"
@@ -28,7 +29,6 @@ app.add_middleware(
         "http://localhost:5173",  
         "http://127.0.0.1:5173",  
         "https://studio-backend-8rnj.onrender.com",  
-        "*" 
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -56,22 +56,7 @@ class BookingCreate(BaseModel):
     class_time: str
     trainer_name: str
 
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
-
-async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)):
-    """Получаем токен из заголовка Authorization"""
-    if not token:
-        return None
-    return {
-        "id": 1,
-        "email": "test@example.com",
-        "first_name": "Иван",
-        "last_name": "Иванов",
-        "phone": "+7 999 123-45-67",
-        "created_at": datetime.now().isoformat()
-    }
-
+app.include_router(auth_router)
 
 @app.get("/")
 def root():
