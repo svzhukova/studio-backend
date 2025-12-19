@@ -104,12 +104,6 @@ def register(user: UserRegister):
         "token_type": "bearer"
     }
 
-@app.get("/auth/me")
-def get_profile(current_user: Optional[dict] = Depends(get_current_user)):
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Требуется авторизация")
-    return current_user
-
 
 
 if __name__ == "__main__":
