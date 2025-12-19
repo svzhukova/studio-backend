@@ -4,19 +4,20 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-import os  # добавили импорт os
+import os  
+from fastapi.staticfiles import StaticFiles
+from routers.bookings import router as bookings_router
 
 app = FastAPI(title="Yoga Studio API", version="1.0")
-
-
-FRONTEND_URL = "https://studio-backend-8rnj.onrender.com" 
+app.include_router(bookings_router)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        FRONTEND_URL,
+        "http://localhost:5173",  
+        "http://127.0.0.1:5173",  
+        "https://studio-backend-8rnj.onrender.com",  
+        "*" 
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -115,3 +116,10 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+
+
+app.include_router(bookings_router)
+
+
+if os.path.exists("dist"):
+    app.mount("/", StaticFiles(directory="dist", html=True), name="static")
