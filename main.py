@@ -7,7 +7,6 @@ from datetime import datetime
 import os  
 from fastapi.staticfiles import StaticFiles
 from routers.bookings import router as bookings_router
-from jose import jwt
 from datetime import timedelta
 
 SECRET_KEY = "your-secret-key-here-change-in-production"
