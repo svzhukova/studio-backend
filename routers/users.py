@@ -1,27 +1,23 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+from models.user import User
+from routers.auth import get_current_user
 
-# Роутер без собственного prefix — он будет задан в main.py
-router = APIRouter(tags=["Users"])
+router = APIRouter(prefix="/users", tags=["Users"])
 
-# Модель пользователя для POST-запросов
-class User(BaseModel):
-    username: str
-    email: str
-    password: str
+@router.get("/profile")
+def get_profile(user_id: int = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Получить профиль текущего пользователя"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
 
-# GET /users/ — тестовый эндпоинт
-@router.get("/")
-def get_users():
-    return {"users": ["Alice", "Bob"]}
-
-# POST /users/register
-@router.post("/register")
-def register_user(user: User):
-    return {"status": "ok", "user": user}
-
-# POST /users/login
-@router.post("/login")
-def login(user: User):
-    # В реальном проекте тут будет проверка пароля
-    return {"status": "logged_in", "user": user.username}
+@router.get("/{user_id}")
+def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
+    """Получить пользователя по ID (для админа)"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user

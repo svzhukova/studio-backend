@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/abonements", tags=["Abonements"])
+router = APIRouter()
 
 @router.get("/")
 def get_abonements():
@@ -9,5 +9,3 @@ def get_abonements():
         {"id": 2, "title": "Абонемент 8 занятий", "price": 4800},
         {"id": 3, "title": "Неограниченный месяц", "price": 5500},
     ]
-
-

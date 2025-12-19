@@ -7,6 +7,18 @@ from datetime import datetime
 import os  
 from fastapi.staticfiles import StaticFiles
 from routers.bookings import router as bookings_router
+from jose import jwt
+from datetime import timedelta
+
+SECRET_KEY = "your-secret-key-here-change-in-production"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 app = FastAPI(title="Yoga Studio API", version="1.0")
 app.include_router(bookings_router)
@@ -72,9 +84,13 @@ def health_check():
 
 @app.post("/auth/login")
 def login(user: UserLogin):
-    print(f"Вход пользователя: {user.email}")
+    user_data = {
+        "sub": "1",  # user.id
+        "email": user.email
+    }
+    access_token = create_access_token(user_data)
     return {
-        "access_token": f"jwt-token-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        "access_token": access_token,
         "token_type": "bearer",
         "user": {
             "id": 1,
