@@ -117,3 +117,16 @@ app.include_router(bookings_router)
 
 if os.path.exists("dist"):
     app.mount("/", StaticFiles(directory="dist", html=True), name="static")
+    
+
+
+if __name__ == "__main__":
+    import uvicorn
+    from alembic import command
+    from alembic.config import Config
+
+    # Применяем миграции при запуске на Render
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
