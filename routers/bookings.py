@@ -5,7 +5,7 @@ from jose import jwt, JWTError
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
-
+from jose import jwt, JWTError
 from database import get_db
 from models.booking import Booking
 from auth import SECRET_KEY, ALGORITHM
