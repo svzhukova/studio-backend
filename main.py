@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import os  
+from database import engine
+from models.user import Base
 from fastapi.staticfiles import StaticFiles
 from routers.bookings import router as bookings_router
 from datetime import timedelta
