@@ -12,15 +12,6 @@ from routers.bookings import router as bookings_router
 from datetime import timedelta
 from auth import router as auth_router
 
-SECRET_KEY = "your-secret-key-here-change-in-production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 app = FastAPI(title="Yoga Studio API", version="1.0")
 
@@ -70,11 +61,6 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     return {"status": "✅ Таблицы созданы по правильной модели"}
 
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 
 app.include_router(bookings_router)
