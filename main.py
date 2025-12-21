@@ -37,12 +37,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    return {}
-class UserLogin(BaseModel):
-    email: str
-    password: str
 
 class UserRegister(BaseModel):
     first_name: str
