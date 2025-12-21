@@ -63,7 +63,12 @@ def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
-
+@app.get("/init-db")
+def init_db():
+    from models.user import Base
+    from database import engine
+    Base.metadata.create_all(bind=engine)
+    return {"status": "✅ Таблицы созданы по правильной модели"}
 
 
 if __name__ == "__main__":
