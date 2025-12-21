@@ -63,6 +63,13 @@ app.include_router(auth_router)
 @app.get("/")
 def root():
     return {"message": "API работает!", "timestamp": datetime.now().isoformat()}
+    
+@app.get("/init-db")
+def init_db():
+    from models.user import Base
+    from database import engine
+    Base.metadata.create_all(bind=engine)
+    return {"message": "Таблицы созданы"}
 
 @app.get("/health")
 def health_check():
