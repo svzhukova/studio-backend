@@ -2,9 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
-from dotenv import load_dotenv  # ← Добавить
+from dotenv import load_dotenv
 
-# Загружаем .env файл
 load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -16,6 +15,9 @@ if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./fitness_club.db"
     print("⚠️ DATABASE_URL не найден, использую SQLite")
 
+# ← ДОБАВЬ ЭТУ СТРОКУ (алиас для Alembic)
+SQLALCHEMY_DATABASE_URL = DATABASE_URL
+
 if "sqlite" in DATABASE_URL:
     engine = create_engine(
         DATABASE_URL,
@@ -25,9 +27,8 @@ else:
     engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
-
+SQLALCHEMY_DATABASE_URL = DATABASE_URL
 def get_db():
     db = SessionLocal()
     try:
