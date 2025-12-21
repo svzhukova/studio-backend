@@ -23,7 +23,7 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 app = FastAPI(title="Yoga Studio API", version="1.0")
-app.include_router(bookings_router)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,43 +68,7 @@ def root():
 def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
-@app.post("/auth/login")
-def login(user: UserLogin):
-    user_data = {
-        "sub": "1",  # user.id
-        "email": user.email
-    }
-    access_token = create_access_token(user_data)
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": 1,
-            "email": user.email,
-            "first_name": "Иван",
-            "last_name": "Иванов",
-            "phone": "+7 999 123-45-67",
-            "created_at": datetime.now().isoformat()
-        }
-    }
 
-@app.post("/auth/register")
-def register(user: UserRegister):
-    print(f"👤 Регистрация: {user.first_name} {user.last_name} ({user.email})")
-    return {
-        "success": True,
-        "message": "Регистрация успешна!",
-        "user": {
-            "id": 2,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "phone": user.phone,
-            "created_at": datetime.now().isoformat()
-        },
-        "access_token": f"reg-token-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-        "token_type": "bearer"
-    }
 
 
 
