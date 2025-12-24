@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from models import schedule
+from models.schedule import Schedule
 
 router = APIRouter(prefix="/schedule", tags=["Schedule"])
 
@@ -12,4 +12,4 @@ def get_schedule():
     ]
 @router.get("/")
 def get_schedule():
-    return schedule
+    return Schedule
