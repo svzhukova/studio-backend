@@ -23,6 +23,11 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(bookings_router)
 
+@app.get("/")
+def root():
+    return {"message": "API работает!"}
+
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
