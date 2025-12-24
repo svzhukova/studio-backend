@@ -6,7 +6,8 @@ from datetime import datetime
 from database import get_db
 from models.booking import Booking
 from models.user import User
-from auth import get_current_user_from_token  # ← единая точка входа
+from auth import get_current_user
+
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -31,14 +32,14 @@ class BookingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# ✅ Теперь используем уже аутентифицированного пользователя
+
 @router.post("/", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
 def create_booking(
     booking_data: BookingCreate,
-    current_user: User = Depends(get_current_user_from_token),  # ← объект User
+    current_user: User = Depends(get_current_user),  
     db: Session = Depends(get_db)
 ):
-    user_id = current_user.id  # ← безопасно, потому что пользователь уже проверен и существует
+    user_id = current_user.id  
 
     existing_booking = db.query(Booking).filter(
         Booking.user_id == user_id,
@@ -69,7 +70,7 @@ def create_booking(
 
 @router.get("/my", response_model=List[BookingResponse])
 def get_my_bookings(
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     bookings = db.query(Booking).filter(
@@ -81,7 +82,7 @@ def get_my_bookings(
 @router.delete("/{booking_id}", status_code=status.HTTP_200_OK)
 def cancel_booking(
     booking_id: int,
-    current_user: User = Depends(get_current_user_from_token),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     booking = db.query(Booking).filter(
